@@ -103,6 +103,14 @@ const DEVOPS_KEYWORDS = new Set([
   'vagrant', 'packer', 'consul', 'nomad', 'redis', 'postgresql', 'mysql',
   'mongodb', 'rabbitmq', 'kafka', 'zookeeper', 'haproxy', 'traefik',
   'containerd', 'cri-o', 'flannel', 'calico', 'metallb', 'cert-manager',
+  // AI/ML
+  'ai', 'ml', 'aiops', 'mlops', 'llm', 'gpt', 'copilot', 'chatgpt',
+  'rag', 'embedding', 'vector', 'inference', 'gpu', 'nvidia', 'cuda',
+  'mlflow', 'kubeflow', 'seldon', 'bentoml', 'vllm', 'ollama', 'triton',
+  'drift', 'anomaly', 'model', 'training', 'prompt', 'agent',
+  'langchain', 'llamaindex', 'pinecone', 'weaviate', 'qdrant',
+  'tensorflow', 'pytorch', 'huggingface', 'openai', 'claude',
+  'kserve', 'feast', 'dvc', 'weights', 'biases',
 ]);
 
 /** Убираем стоп-слова, оставляем значимые термины */
