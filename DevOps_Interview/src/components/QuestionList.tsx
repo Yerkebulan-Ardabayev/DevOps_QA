@@ -58,7 +58,7 @@ const QuestionList = ({ category, categoryIndex, questions, focusIdx = -1, onBac
           const isFocused = idx === focusIdx;
           return (
             <button
-              key={q.id}
+              key={q.num}
               data-focus-idx={idx}
               onClick={() => onSelectQuestion(q)}
               className={`group w-full text-left flex items-center gap-3 px-4 py-3.5 rounded-lg bg-card border transition-all ${

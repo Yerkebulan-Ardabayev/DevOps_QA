@@ -101,21 +101,99 @@
 }
 
 /* Answer content styling */
+.answer-content {
+  /* Prevent overflow from long URLs/tokens on narrow screens */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
 .answer-content h4 {
   @apply text-primary font-semibold text-lg mt-8 mb-3 pb-2 border-b border-border;
 }
 .answer-content p {
   @apply mb-4 leading-relaxed;
 }
-.answer-content ul {
+.answer-content ul,
+.answer-content ol {
   @apply mb-5 space-y-2;
 }
-.answer-content li {
-  @apply pl-6 relative;
+.answer-content ol {
+  counter-reset: item;
+  @apply pl-0;
 }
-.answer-content li::before {
+.answer-content ul > li,
+.answer-content ol > li {
+  @apply relative pl-6;
+}
+.answer-content ul > li::before {
   content: '';
   @apply absolute left-1 top-[10px] w-2 h-2 rounded-full bg-primary opacity-50;
+}
+.answer-content ol > li {
+  counter-increment: item;
+}
+.answer-content ol > li::before {
+  content: counter(item) '.';
+  @apply absolute left-0 top-0 text-primary font-semibold font-mono text-sm;
+}
+.answer-content pre {
+  @apply my-4 p-4 rounded-lg bg-muted/60 border border-border text-sm leading-relaxed;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.answer-content pre code {
+  @apply font-mono bg-transparent p-0 text-[0.9em];
+  white-space: pre;
+  word-wrap: normal;
+}
+.answer-content :not(pre) > code {
+  @apply font-mono text-[0.9em] px-1.5 py-0.5 rounded bg-muted/70 border border-border/60;
+  color: hsl(var(--text-code));
+  word-break: break-word;
+}
+/* Tables: горизонтальный скролл вместо вылезания за экран */
+.answer-content table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-collapse: collapse;
+  @apply my-4 text-sm;
+}
+.answer-content table th,
+.answer-content table td {
+  @apply px-3 py-2 border border-border align-top;
+}
+.answer-content table th {
+  @apply bg-muted/50 text-left font-semibold text-foreground;
+}
+.answer-content table tr:nth-child(even) td {
+  @apply bg-muted/20;
+}
+.answer-content a {
+  @apply text-primary underline underline-offset-2 hover:text-primary/80;
+  word-break: break-word;
+}
+
+/* Responsive tweaks for phones */
+@media (max-width: 640px) {
+  .answer-content {
+    font-size: 15px;
+  }
+  .answer-content h4 {
+    @apply text-base mt-6;
+  }
+  .answer-content pre {
+    @apply p-3 text-xs;
+  }
+  .answer-content table {
+    @apply text-xs;
+  }
+  .answer-content table th,
+  .answer-content table td {
+    @apply px-2 py-1.5;
+  }
 }
 
 /* Command palette animation */
