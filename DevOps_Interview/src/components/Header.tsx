@@ -1,4 +1,5 @@
 import { Search, Terminal, Mic, MicOff } from 'lucide-react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface HeaderProps {
   totalQuestions: number;
@@ -35,6 +36,8 @@ const Header = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
+
           {/* Mic status indicator */}
           {voiceSupported && (
             <button

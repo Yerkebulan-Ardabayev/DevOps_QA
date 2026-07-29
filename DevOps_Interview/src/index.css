@@ -54,6 +54,57 @@
     --font-display: 'Space Grotesk', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   }
+
+  /*
+   * Светлая тема. Тёмная лежит в :root и остаётся значением по умолчанию,
+   * поэтому здесь перечислены только переопределения. Класс на <html> ставит
+   * next-themes (attribute="class"), до гидратации — инлайн-скрипт в index.html.
+   */
+  .light {
+    --background: 220 30% 98%;
+    --foreground: 230 25% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 230 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 230 25% 12%;
+
+    /* Бирюзовый темнее, чем в тёмной теме: на белом фоне светлый не читается. */
+    --primary: 187 85% 30%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 20% 93%;
+    --secondary-foreground: 230 20% 25%;
+
+    --muted: 220 20% 95%;
+    --muted-foreground: 225 12% 40%;
+
+    --accent: 32 85% 40%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 18% 87%;
+    --input: 220 18% 87%;
+    --ring: 187 85% 30%;
+
+    --sidebar-background: 220 25% 96%;
+    --sidebar-foreground: 230 20% 25%;
+    --sidebar-primary: 187 85% 30%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 92%;
+    --sidebar-accent-foreground: 230 20% 25%;
+    --sidebar-border: 220 18% 87%;
+    --sidebar-ring: 187 85% 30%;
+
+    --glow-primary: 0 0 20px hsl(187 85% 30% / 0.12);
+    --glow-accent: 0 0 20px hsl(32 85% 40% / 0.12);
+    --gradient-card-hover: linear-gradient(135deg, hsl(187 85% 30% / 0.06), hsl(32 85% 40% / 0.04));
+    --surface-elevated: 220 25% 96%;
+    --text-code: 187 70% 26%;
+  }
 }
 
 @layer base {
@@ -217,4 +268,20 @@
 .card-glow:hover {
   box-shadow: var(--glow-primary);
   border-color: hsl(var(--primary) / 0.3);
+}
+
+/*
+ * Подсветка совпадений в результатах поиска.
+ * Браузерный <mark> по умолчанию жёлтый с чёрным текстом — в тёмной теме это
+ * выжигает глаза, поэтому цвет берётся из палитры и разный для тем.
+ */
+.search-hit {
+  background-color: hsl(var(--accent) / 0.28);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+  font-weight: 600;
+}
+.light .search-hit {
+  background-color: hsl(var(--accent) / 0.22);
 }

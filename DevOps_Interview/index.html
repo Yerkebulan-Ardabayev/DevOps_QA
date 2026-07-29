@@ -10,6 +10,29 @@
     <meta property="og:title" content="DevOps Interview Q&A" />
     <meta property="og:description" content="273 вопроса и ответа для подготовки к DevOps-собеседованию" />
     <meta property="og:type" content="website" />
+
+    <!--
+      Тема ставится до первой отрисовки, иначе при загрузке в светлой теме
+      успевает мигнуть тёмный фон. Ключ storage должен совпадать со storageKey
+      у ThemeProvider в App.tsx.
+    -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var theme =
+            saved === 'light' || saved === 'dark'
+              ? saved
+              : window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark';
+          document.documentElement.classList.add(theme);
+          document.documentElement.style.colorScheme = theme;
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
 
   <body>

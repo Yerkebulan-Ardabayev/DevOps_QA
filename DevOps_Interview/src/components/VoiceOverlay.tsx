@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Mic, X, ChevronRight, ExternalLink } from 'lucide-react';
-import { DevOpsData, searchQuestions, shortCat, stripHtml, Question } from '@/lib/devops-data';
+import { DevOpsData, searchQuestions, shortCat, stripHtml, Question, buildSearchTerms } from '@/lib/devops-data';
+import Highlighted from '@/components/Highlighted';
 
 interface VoiceOverlayProps {
   query: string;
@@ -77,6 +78,8 @@ const VoiceOverlay = ({ query, rawTranscript, data, onSelectQuestion, onClear }:
   if (query.trim().length === 0) return null;
 
   const bestMatch = results[0];
+  // Термины для подсветки — те же, по которым ранжировался поиск.
+  const highlightTerms = buildSearchTerms(query).all;
 
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[90] w-full max-w-2xl px-4 animate-fade-in">
@@ -124,7 +127,9 @@ const VoiceOverlay = ({ query, rawTranscript, data, onSelectQuestion, onClear }:
           >
             <div className="flex items-center gap-2 mb-1.5">
               <span className="font-mono text-xs text-primary font-bold">#{bestMatch.num}</span>
-              <span className="text-sm font-semibold text-foreground flex-1">{bestMatch.text}</span>
+              <span className="text-sm font-semibold text-foreground flex-1">
+                <Highlighted text={bestMatch.text} terms={highlightTerms} />
+              </span>
               <ExternalLink className="w-3 h-3 text-muted-foreground shrink-0" />
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed" style={{
@@ -133,11 +138,11 @@ const VoiceOverlay = ({ query, rawTranscript, data, onSelectQuestion, onClear }:
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
             }}>
-              {truncate(stripHtml(bestMatch.answer), 280)}
+              <Highlighted text={truncate(stripHtml(bestMatch.answer), 280)} terms={highlightTerms} />
             </p>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="text-[10px] text-primary/70 font-mono bg-primary/5 px-1.5 py-0.5 rounded">
-                {shortCat(bestMatch.category)}
+                <Highlighted text={shortCat(bestMatch.category)} terms={highlightTerms} />
               </span>
               <span className="text-[10px] text-muted-foreground">
                 Enter — открыть полный ответ
@@ -166,9 +171,11 @@ const VoiceOverlay = ({ query, rawTranscript, data, onSelectQuestion, onClear }:
                     #{q.num}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm truncate">{q.text}</div>
+                    <div className="text-sm truncate">
+                      <Highlighted text={q.text} terms={highlightTerms} />
+                    </div>
                     <div className="text-[10px] text-muted-foreground truncate mt-0.5">
-                      {truncate(stripHtml(q.answer), 90)}
+                      <Highlighted text={truncate(stripHtml(q.answer), 90)} terms={highlightTerms} />
                     </div>
                   </div>
                   <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />

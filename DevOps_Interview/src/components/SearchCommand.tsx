@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Search, X, Mic, MicOff, AlertCircle } from 'lucide-react';
-import { DevOpsData, searchQuestions, shortCat, Question } from '@/lib/devops-data';
+import { DevOpsData, searchQuestions, shortCat, Question, buildSearchTerms } from '@/lib/devops-data';
 import { fixVoiceTranscript } from '@/lib/voice-fixes';
+import Highlighted from '@/components/Highlighted';
 
 function getSR(): SpeechRecognitionConstructor | null {
   if (typeof window === 'undefined') return null;
@@ -146,6 +147,9 @@ const SearchCommand = ({ open, onClose, data, onSelectQuestion }: SearchCommandP
     el?.scrollIntoView({ block: 'nearest' });
   }, [selectedIdx]);
 
+  // Термины для подсветки — ровно те, по которым сработало ранжирование.
+  const highlightTerms = useMemo(() => buildSearchTerms(query).all, [query]);
+
   if (!open) return null;
 
   return (
@@ -224,8 +228,12 @@ const SearchCommand = ({ open, onClose, data, onSelectQuestion }: SearchCommandP
               >
                 <span className="font-mono text-xs text-primary font-semibold mt-1 shrink-0 w-8">#{q.num}</span>
                 <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{q.text}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{shortCat(q.category)}</div>
+                  <div className="text-sm font-medium truncate">
+                    <Highlighted text={q.text} terms={highlightTerms} />
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    <Highlighted text={shortCat(q.category)} terms={highlightTerms} />
+                  </div>
                 </div>
               </button>
             ))}

@@ -120,19 +120,24 @@ function filterStopWords(terms: string[]): string[] {
   return meaningful.length > 0 ? meaningful : terms;
 }
 
+export interface SearchTerms {
+  /** Все варианты, по которым идёт сопоставление: слова пользователя + синонимы + транслит. */
+  all: string[];
+  /** Только то, что ввёл пользователь (без стоп-слов) — весит вдвое при ранжировании. */
+  user: Set<string>;
+}
+
 /**
- * Умный поиск с:
- *   1. Стоп-слова убираются
- *   2. Синонимы расширяют запрос (слой → layer, image layer, overlay...)
- *   3. Транслитерация кириллицы → латиница (губернетис → gubernetis → kubernetes)
- *   4. Совпадение в заголовке × 5, в категории × 3, в ответе × 1
- *   5. Оригинальные термины пользователя весят × 2 по сравнению с синонимами
- *   6. DevOps-термин в заголовке — ещё бонус
- *   7. Результат сортируется по score ↓
+ * Строит набор поисковых терминов из запроса.
+ *
+ * Вынесено отдельно, потому что этим же набором подсвечиваются совпадения в
+ * результатах: подсветка обязана показывать ровно то, по чему сработал поиск,
+ * иначе она врёт (запрос «губернетис» находит ответ по слову «kubernetes» —
+ * подсветить надо именно его, а не исходное слово, которого в тексте нет).
  */
-export function searchQuestions(data: DevOpsData, query: string): Question[] {
+export function buildSearchTerms(query: string): SearchTerms {
   const rawTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 0);
-  if (rawTerms.length === 0) return [];
+  if (rawTerms.length === 0) return { all: [], user: new Set() };
 
   const userTerms = filterStopWords(rawTerms);
 
@@ -149,11 +154,27 @@ export function searchQuestions(data: DevOpsData, query: string): Question[] {
     }
   }
 
-  // Объединяем все варианты поиска
-  const allTerms = new Set([...withSynonyms, ...translitVariants]);
+  return {
+    all: [...new Set([...withSynonyms, ...translitVariants])],
+    user: new Set(userTerms),
+  };
+}
 
-  // Множество оригинальных терминов для повышенного веса
-  const userSet = new Set(userTerms);
+/**
+ * Умный поиск с:
+ *   1. Стоп-слова убираются
+ *   2. Синонимы расширяют запрос (слой → layer, image layer, overlay...)
+ *   3. Транслитерация кириллицы → латиница (губернетис → gubernetis → kubernetes)
+ *   4. Совпадение в заголовке × 5, в категории × 3, в ответе × 1
+ *   5. Оригинальные термины пользователя весят × 2 по сравнению с синонимами
+ *   6. DevOps-термин в заголовке — ещё бонус
+ *   7. Результат сортируется по score ↓
+ */
+export function searchQuestions(data: DevOpsData, query: string): Question[] {
+  const { all: allTerms, user: userSet } = buildSearchTerms(query);
+  if (allTerms.length === 0) return [];
+
+  const userTerms = [...userSet];
 
   const scored: { q: Question; score: number }[] = [];
 

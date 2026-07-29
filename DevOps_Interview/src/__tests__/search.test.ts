@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   type DevOpsData,
+  buildSearchTerms,
   getQuestionsForCategory,
   searchQuestions,
   shortCat,
   stripHtml,
 } from '@/lib/devops-data';
+import { highlightSegments } from '@/lib/highlight';
 import { cyrToLatin, generateSearchVariants } from '@/lib/translit';
 import { expandWithSynonyms } from '@/lib/synonyms';
 
@@ -110,5 +112,67 @@ describe('synonyms', () => {
   it('расширение синонимами не теряет исходные термины', () => {
     const out = expandWithSynonyms(['docker']);
     expect(out).toContain('docker');
+  });
+});
+
+describe('buildSearchTerms', () => {
+  it('выбрасывает стоп-слова и оставляет значимые термины', () => {
+    const { user } = buildSearchTerms('что такое kubernetes');
+    expect(user.has('kubernetes')).toBe(true);
+    expect(user.has('что')).toBe(false);
+    expect(user.has('такое')).toBe(false);
+  });
+
+  it('на пустом запросе возвращает пустой набор', () => {
+    const { all, user } = buildSearchTerms('   ');
+    expect(all).toEqual([]);
+    expect(user.size).toBe(0);
+  });
+
+  it('в набор попадают синонимы, а не только ввод пользователя', () => {
+    // Ровно тот случай, ради которого подсветка берёт all, а не ввод: слова
+    // «образ» в англоязычном тексте ответа нет, совпадёт «image» — и подсветить
+    // надо именно его, иначе подсветка не объясняет, почему результат найден.
+    const { all, user } = buildSearchTerms('образ');
+    expect(user.has('образ')).toBe(true);
+    expect(all).toContain('image');
+  });
+
+  it('кириллица даёт латинские варианты для fuzzy-поиска', () => {
+    const { all } = buildSearchTerms('губернетис');
+    expect(all).toContain('gubernetis');
+    expect(all.some(t => t.startsWith('k'))).toBe(true);
+  });
+});
+
+describe('highlightSegments', () => {
+  it('помечает совпадение и оставляет остальной текст целым', () => {
+    const segs = highlightSegments('Что такое Kubernetes?', ['kubernetes']);
+    expect(segs.map(s => s.text).join('')).toBe('Что такое Kubernetes?');
+    expect(segs.filter(s => s.hit).map(s => s.text)).toEqual(['Kubernetes']);
+  });
+
+  it('регистр не важен', () => {
+    const segs = highlightSegments('DOCKER и docker', ['Docker']);
+    expect(segs.filter(s => s.hit).map(s => s.text)).toEqual(['DOCKER', 'docker']);
+  });
+
+  it('длинный термин побеждает короткий и подсветка не рвётся', () => {
+    const segs = highlightSegments('kubernetes', ['kube', 'kubernetes']);
+    expect(segs.filter(s => s.hit).map(s => s.text)).toEqual(['kubernetes']);
+  });
+
+  it('спецсимволы в термине не ломают регулярку', () => {
+    const segs = highlightSegments('порт (80) открыт', ['(80)']);
+    expect(segs.filter(s => s.hit).map(s => s.text)).toEqual(['(80)']);
+  });
+
+  it('односимвольные термины игнорируются, иначе подсветится половина текста', () => {
+    const segs = highlightSegments('в среде в кластере', ['в']);
+    expect(segs.some(s => s.hit)).toBe(false);
+  });
+
+  it('без терминов возвращает текст одним куском', () => {
+    expect(highlightSegments('текст', [])).toEqual([{ text: 'текст', hit: false }]);
   });
 });
