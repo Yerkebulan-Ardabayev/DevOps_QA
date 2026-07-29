@@ -14,13 +14,13 @@ const WAKE_WORDS = [
   'окей девопс', 'ок девопс',
 ];
 
-function getSR(): (new () => any) | null {
+function getSR(): SpeechRecognitionConstructor | null {
   if (typeof window === 'undefined') return null;
-  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
 export function useWakeWord(onWake: () => void, enabled: boolean = true) {
-  const recRef = useRef<any>(null);
+  const recRef = useRef<SpeechRecognition | null>(null);
   const [active, setActive] = useState(false);
   const enabledRef = useRef(enabled);
   const onWakeRef = useRef(onWake);
@@ -31,7 +31,11 @@ export function useWakeWord(onWake: () => void, enabled: boolean = true) {
   useEffect(() => { onWakeRef.current = onWake; }, [onWake]);
 
   const stop = useCallback(() => {
-    try { recRef.current?.abort(); } catch {}
+    try {
+      recRef.current?.abort();
+    } catch {
+      // abort() бросает, если распознавание уже остановлено — это не ошибка
+    }
     recRef.current = null;
     setActive(false);
   }, []);
@@ -46,7 +50,7 @@ export function useWakeWord(onWake: () => void, enabled: boolean = true) {
     rec.interimResults = false;
     rec.maxAlternatives = 3;
 
-    rec.onresult = (ev: any) => {
+    rec.onresult = (ev: SpeechRecognitionEvent) => {
       for (let i = ev.resultIndex; i < ev.results.length; i++) {
         if (!ev.results[i].isFinal) continue;
         for (let a = 0; a < ev.results[i].length; a++) {
@@ -62,7 +66,7 @@ export function useWakeWord(onWake: () => void, enabled: boolean = true) {
       }
     };
 
-    rec.onerror = (ev: any) => {
+    rec.onerror = (ev: SpeechRecognitionErrorEvent) => {
       if (ev.error === 'no-speech' || ev.error === 'aborted') {
         if (enabledRef.current) {
           setTimeout(() => { if (enabledRef.current && !recRef.current) start(); }, 500);

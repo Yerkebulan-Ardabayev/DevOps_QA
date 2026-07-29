@@ -3,9 +3,9 @@ import { Search, X, Mic, MicOff, AlertCircle } from 'lucide-react';
 import { DevOpsData, searchQuestions, shortCat, Question } from '@/lib/devops-data';
 import { fixVoiceTranscript } from '@/lib/voice-fixes';
 
-function getSR(): (new () => any) | null {
+function getSR(): SpeechRecognitionConstructor | null {
   if (typeof window === 'undefined') return null;
-  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
 interface SearchCommandProps {
@@ -23,7 +23,7 @@ const SearchCommand = ({ open, onClose, data, onSelectQuestion }: SearchCommandP
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const recRef = useRef<any>(null);
+  const recRef = useRef<SpeechRecognition | null>(null);
   const shouldListenRef = useRef(false);
 
   const SR = getSR();
@@ -32,7 +32,11 @@ const SearchCommand = ({ open, onClose, data, onSelectQuestion }: SearchCommandP
   // ====== VOICE ======
   const stopVoice = useCallback(() => {
     shouldListenRef.current = false;
-    try { recRef.current?.abort(); } catch {}
+    try {
+      recRef.current?.abort();
+    } catch {
+      // abort() бросает, если распознавание уже остановлено — это не ошибка
+    }
     recRef.current = null;
     setListening(false);
   }, []);
@@ -49,7 +53,7 @@ const SearchCommand = ({ open, onClose, data, onSelectQuestion }: SearchCommandP
     rec.interimResults = true;
     rec.maxAlternatives = 1;
 
-    rec.onresult = (ev: any) => {
+    rec.onresult = (ev: SpeechRecognitionEvent) => {
       // Берём ТОЛЬКО последний результат — каждая фраза ЗАМЕНЯЕТ запрос
       const lastIdx = ev.results.length - 1;
       const raw = ev.results[lastIdx][0].transcript.trim();
@@ -57,7 +61,7 @@ const SearchCommand = ({ open, onClose, data, onSelectQuestion }: SearchCommandP
       setQuery(fixed);
     };
 
-    rec.onerror = (ev: any) => {
+    rec.onerror = (ev: SpeechRecognitionErrorEvent) => {
       const msg: Record<string, string> = {
         'not-allowed': 'Микрофон заблокирован — нажмите 🔒 в адресной строке → разрешить',
         'audio-capture': 'Микрофон не найден',
@@ -88,8 +92,8 @@ const SearchCommand = ({ open, onClose, data, onSelectQuestion }: SearchCommandP
     try {
       rec.start();
       setListening(true);
-    } catch (e: any) {
-      setVoiceError(`Не удалось: ${e.message}`);
+    } catch (e) {
+      setVoiceError(`Не удалось: ${e instanceof Error ? e.message : String(e)}`);
       stopVoice();
     }
   }, [SR, stopVoice]);
@@ -155,7 +159,12 @@ const SearchCommand = ({ open, onClose, data, onSelectQuestion }: SearchCommandP
             {/* Mic status — кликабельный toggle */}
             {voiceSupported && (
               <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); listening ? stopVoice() : startVoice(); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (listening) stopVoice();
+                  else startVoice();
+                }}
                 type="button"
                 className={`p-1.5 rounded-lg transition-all shrink-0 ${
                   listening

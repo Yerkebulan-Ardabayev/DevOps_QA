@@ -13,9 +13,9 @@ import { fixVoiceTranscript } from '@/lib/voice-fixes';
  * Returns: { query, listening, error, clear, toggle, supported }
  */
 
-function getSR(): (new () => any) | null {
+function getSR(): SpeechRecognitionConstructor | null {
   if (typeof window === 'undefined') return null;
-  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
 const IDLE_TIMEOUT_MS = 4000; // через 4 сек тишины — скрываем результаты
@@ -27,7 +27,7 @@ export function useAlwaysOnVoice() {
   const [error, setError] = useState<string | null>(null);
   const [enabled, setEnabled] = useState(false);
 
-  const recRef = useRef<any>(null);
+  const recRef = useRef<SpeechRecognition | null>(null);
   const enabledRef = useRef(false);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const SR = getSR();
@@ -50,7 +50,11 @@ export function useAlwaysOnVoice() {
   }, []);
 
   const stop = useCallback(() => {
-    try { recRef.current?.abort(); } catch {}
+    try {
+      recRef.current?.abort();
+    } catch {
+      // abort() бросает, если распознавание уже остановлено — это не ошибка
+    }
     recRef.current = null;
     setListening(false);
     if (idleTimer.current) clearTimeout(idleTimer.current);
@@ -67,7 +71,7 @@ export function useAlwaysOnVoice() {
     rec.interimResults = true;
     rec.maxAlternatives = 1;
 
-    rec.onresult = (ev: any) => {
+    rec.onresult = (ev: SpeechRecognitionEvent) => {
       const lastIdx = ev.results.length - 1;
       const raw = ev.results[lastIdx][0].transcript.trim();
       setRawTranscript(raw); // сохраняем сырой текст для дебага
@@ -78,7 +82,7 @@ export function useAlwaysOnVoice() {
       }
     };
 
-    rec.onerror = (ev: any) => {
+    rec.onerror = (ev: SpeechRecognitionErrorEvent) => {
       const msg: Record<string, string> = {
         'not-allowed': 'Микрофон заблокирован — нажмите 🔒 в адресной строке → разрешить',
         'audio-capture': 'Микрофон не найден',
@@ -122,8 +126,8 @@ export function useAlwaysOnVoice() {
     try {
       rec.start();
       setListening(true);
-    } catch (e: any) {
-      setError(`Не удалось запустить: ${e.message}`);
+    } catch (e) {
+      setError(`Не удалось запустить: ${e instanceof Error ? e.message : String(e)}`);
       setListening(false);
     }
   }, [SR, stop, resetIdle]);
